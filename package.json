@@ -1,0 +1,20 @@
+{
+  "name": "replicache-relations",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "fake-indexeddb": "^6.0.0",
+    "replicache": "^14.2.2",
+    "vitest": "^1.6.0"
+  },
+  "peerDependencies": {
+    "replicache": "^14.2.2"
+  }
+}
