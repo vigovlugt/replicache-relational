@@ -1,9 +1,9 @@
 import "fake-indexeddb/auto";
 import { Replicache, TEST_LICENSE_KEY, WriteTransaction } from "replicache";
-import { InferInsert, date, number, string, table } from "./schema";
 import { expect, test } from "vitest";
-import { deleteFrom, insert, select } from "./operations";
-import { and, eq, neq } from "./filter";
+import { eq, and, neq } from "./filter";
+import { insert, deleteFrom, select } from "./operations";
+import { table, string, number, date, InferInsert, alias } from "./schema";
 
 const users = table("users", {
     id: string("id").primaryKey(),
@@ -41,7 +41,7 @@ async function replicacheFixture() {
     });
     await rep.mutate.createUser({
         id: "3",
-        name: "John Doe",
+        name: "Jack Doe",
         age: 42,
     });
 
@@ -72,7 +72,7 @@ test("Insert and select with advanced where", async () => {
     const userList = await replicache.query(
         select()
             .from(users)
-            .where(and(neq(users.id, "1"), eq(users.name, "John Doe"))).execute
+            .where(and(eq(users.id, "1"), eq(users.name, "John Doe"))).execute
     );
 
     expect(userList.length).toBe(1);
@@ -94,4 +94,33 @@ test("Delete", async () => {
     );
 
     expect(userList2.length).toBe(0);
+});
+
+test("Select joins", async () => {
+    const replicache = await replicacheFixture();
+
+    const friend = alias(users, "friend");
+    const users2 = await replicache.query(
+        select().from(users).innerJoin(friend, neq(friend.id, users.id)).execute
+    );
+
+    console.log(users2);
+
+    expect(users2.length).toBe(6);
+});
+
+test("Triple join", async () => {
+    const replicache = await replicacheFixture();
+
+    const friend = alias(users, "friend");
+    const friend2 = alias(users, "friend2");
+
+    const users2 = await replicache.query(
+        select()
+            .from(users)
+            .innerJoin(friend, eq(1, 1))
+            .innerJoin(friend2, eq(1, 1)).execute
+    );
+
+    expect(users2.length).toBe(27);
 });

@@ -52,10 +52,18 @@ export function getKey<TTable extends Table>(
     value?: ReadonlyJSONObject
 ) {
     if (value === undefined) {
-        return table._.name + "/";
+        return "/" + table._.originalName + "/";
     }
 
-    return [table._.name, ...table._.primaryKeys.map((key) => value[key])].join(
-        "/"
+    return (
+        "/" +
+        [
+            table._.originalName,
+            ...table._.primaryKeys.map((key) => value[key]),
+        ].join("/")
     );
 }
+
+export type Prettify<T> = {
+    [K in keyof T]: T[K];
+} & {};

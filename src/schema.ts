@@ -1,10 +1,27 @@
+import { Prettify } from "./utils";
+
+type TableWithSchema<T extends Table> = T & {
+    [K in keyof T["_"]["schema"]]: T["_"]["schema"][K];
+};
+
 export function table<
     TName extends string,
     TSchema extends Record<string, Column>
 >(name: TName, schema: TSchema) {
-    return new Table(name, schema) as Table<TName, TSchema> & {
-        [K in keyof TSchema]: TSchema[K];
-    };
+    return new Table(name, name, schema) as TableWithSchema<
+        Table<TName, TSchema>
+    >;
+}
+
+export function alias<T extends Table, TNewName extends string>(
+    table: T,
+    name: TNewName
+) {
+    return new Table(
+        name,
+        table._.originalName,
+        table._.schema
+    ) as TableWithSchema<Table<TNewName, T["_"]["schema"]>>;
 }
 
 export class Table<
@@ -13,13 +30,15 @@ export class Table<
 > {
     _: {
         name: TName;
+        originalName: string;
         schema: TSchema;
         primaryKeys: string[];
     };
 
-    constructor(name: TName, schema: TSchema) {
+    constructor(name: TName, originalName: string, schema: TSchema) {
         this._ = {
             name,
+            originalName,
             schema: Object.fromEntries(
                 Object.entries(schema).map(([key, value]) => [
                     key,
@@ -142,10 +161,6 @@ export type InferSelect<T> = T extends Table
           [K in keyof T["_"]["schema"]]: InferColumn<T["_"]["schema"][K]>;
       }
     : never;
-
-export type Prettify<T> = {
-    [K in keyof T]: T[K];
-} & {};
 
 export type OptionalKeyOnly<T extends Column> = T extends Column<
     any,

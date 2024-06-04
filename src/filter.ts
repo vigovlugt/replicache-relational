@@ -1,4 +1,4 @@
-import { Column, ColumnType, InferColumnType } from "./schema";
+import { Column, ColumnType, InferColumnType, Table } from "./schema";
 
 export type Filter =
     | {
@@ -213,4 +213,23 @@ export function or(...filters: Filter[]): Filter {
         type: "or",
         filters,
     };
+}
+
+export function tablesInFilter(filter: Filter | undefined): Table[] {
+    if (filter === undefined) {
+        return [];
+    }
+
+    switch (filter.type) {
+        case "binop":
+            return [
+                ...(filter.left instanceof Column ? [filter.left.table!] : []),
+                ...(filter.right instanceof Column
+                    ? [filter.right.table!]
+                    : []),
+            ];
+        case "and":
+        case "or":
+            return filter.filters.flatMap(tablesInFilter);
+    }
 }

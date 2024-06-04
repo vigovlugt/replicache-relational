@@ -1,17 +1,8 @@
-import {
-    WriteTransaction,
-    ReadTransaction,
-    ReadonlyJSONObject,
-} from "replicache";
-import { Table, InferInsert, InferSelect, nullSymbol } from "./schema";
-import {
-    serializeObjects,
-    getKey,
-    serializeObject,
-    deserializeObjects,
-} from "./utils";
-import { queryExecutor, queryPlanner } from "./query-planner";
-import { Filter } from "./filter";
+import { WriteTransaction, ReadonlyJSONObject } from "replicache";
+import { Table, InferInsert, nullSymbol } from "../schema";
+import { serializeObjects, getKey, serializeObject } from "../utils";
+import { Filter } from "../filter";
+import { select } from "./select";
 
 function applyDefaults<T extends Table>(table: T, value: InferInsert<T>) {
     return Object.fromEntries(
@@ -58,8 +49,13 @@ export function update<T extends Table>(table: T) {
     return {
         set(value: Partial<InferInsert<T>>) {
             async function executeFn(tx: WriteTransaction, where?: Filter) {
-                const queryPlan = queryPlanner([table], where);
-                const updateRows = await queryExecutor(queryPlan, tx);
+                let selectStmt = select().from(table);
+                if (where) {
+                    selectStmt = selectStmt.where(where);
+                }
+
+                const updateRows = await selectStmt.execute(tx);
+
                 const serializedValue = serializeObject(table, value);
                 for await (const existingValue of updateRows) {
                     const newValue = {
@@ -81,7 +77,7 @@ export function update<T extends Table>(table: T) {
                 async execute(tx: WriteTransaction) {
                     return await executeFn(tx);
                 },
-                where(where: any) {
+                where(where: Filter) {
                     return {
                         async execute(tx: WriteTransaction) {
                             return await executeFn(tx, where);
@@ -93,39 +89,19 @@ export function update<T extends Table>(table: T) {
     };
 }
 
-export function select() {
-    return {
-        from<T extends Table>(table: T) {
-            const buildExecute = (table: T, where?: Filter) => {
-                return async (tx: ReadTransaction) => {
-                    const queryPlan = queryPlanner([table], where);
-                    const result = await queryExecutor(queryPlan, tx);
-
-                    return deserializeObjects(
-                        table,
-                        result
-                    ) as InferSelect<T>[];
-                };
-            };
-
-            return {
-                execute: buildExecute(table),
-                where(where: Filter) {
-                    return {
-                        execute: buildExecute(table, where),
-                    };
-                },
-            };
-        },
-    };
-}
-
 export function deleteFrom<T extends Table>(table: T) {
     async function executeFn(tx: WriteTransaction, where?: Filter) {
-        const queryPlan = queryPlanner([table], where);
-        const updateRows = await queryExecutor(queryPlan, tx);
-        for await (const existingValue of updateRows) {
-            const key = getKey(table, existingValue);
+        let selectStmt = select().from(table);
+        if (where) {
+            selectStmt = selectStmt.where(where);
+        }
+
+        const rowsToDelete = (await selectStmt.execute(
+            tx
+        )) as ReadonlyJSONObject[];
+
+        for await (const row of rowsToDelete) {
+            const key = getKey(table, row);
             await tx.del(key);
         }
     }
