@@ -90,9 +90,8 @@ export type SelectResult<T> = T extends Select<infer TTable, infer TJoins>
         ? InferSelect<TTable>[]
         : Prettify<
               {
-                  // TODO: replace number -> K
-                  [K in TJoins[number]["table"]["_"]["name"]]: InferSelect<
-                      TJoins[number]["table"]
+                  [K in TJoins[number] as K["table"]["_"]["name"]]: InferSelect<
+                      K["table"]
                   >;
               } & {
                   [K in TTable["_"]["name"]]: InferSelect<TTable>;
@@ -107,3 +106,7 @@ export function select() {
         },
     };
 }
+
+const x = [1, 2, 3] as const;
+
+type X = (typeof x)[number];
