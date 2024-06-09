@@ -6,6 +6,22 @@ export type QueryPlan = {
     filter: Filter | undefined;
 };
 
+export type LogicalOperator =
+    | {
+          type: "select";
+          table: Table;
+      }
+    | {
+          type: "join";
+          joinType: "inner" | "left";
+          right: Table;
+          left: Table;
+      }
+    | {
+          type: "filter";
+          filter: Filter;
+      };
+
 export type Scan = {
     type: "scan";
     table: Table;
@@ -15,13 +31,6 @@ export type Search = {
     type: "search";
     table: Table;
     // index: Index
-    eq: string;
-};
-
-export type MultiIndexOr = {
-    type: "multi-index-or";
-    table: Table;
-    indexes: string[];
     eq: string;
 };
 

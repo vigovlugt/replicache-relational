@@ -1,1 +1,1 @@
-# replicache-relations
+# replicache-relational
