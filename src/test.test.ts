@@ -124,3 +124,17 @@ test("Triple join", async () => {
 
     expect(users2.length).toBe(27);
 });
+
+test("Left join", async () => {
+    const replicache = await replicacheFixture();
+
+    const friend = alias(users, "friend");
+    const users2 = await replicache.query(
+        select().from(users).leftJoin(friend, eq(friend.id, "non existant"))
+            .execute
+    );
+
+    console.log(users2);
+
+    expect(users2.length).toBe(3);
+});

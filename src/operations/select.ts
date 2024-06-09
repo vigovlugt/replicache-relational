@@ -1,10 +1,6 @@
 import { ReadTransaction } from "replicache";
 import { Filter } from "../filter";
-import {
-    queryPlanner,
-    queryExecutor,
-    validateQuery,
-} from "../query-plan/query-planner";
+import { queryPlanner, queryExecutor, validateQuery } from "../query-plan/";
 import { InferSelect, Table } from "../schema";
 import { Prettify, deserializeObjects } from "../utils";
 
